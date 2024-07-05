@@ -11,8 +11,8 @@ The dataset comprises restaurant information, including restaurant names, menu i
 ### Corpus
 A corpus is generated from the dataset, which includes all restaurant names and menu items. This corpus is used for training the models. The names and menu items are converted to lowercase to ensure consistency during training and querying.
 
-### Models
-Byte Pair Encoding (BPE)
+## Models
+### Byte Pair Encoding (BPE)
 Byte Pair Encoding is a subword tokenization technique that helps efficiently handle rare or out-of-vocabulary words by breaking them into more common subwords. BPE is used to preprocess the corpus before training the models, ensuring better tokenization and improved model performance.
 
 ### Word2Vec
