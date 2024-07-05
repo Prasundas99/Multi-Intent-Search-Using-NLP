@@ -2,6 +2,9 @@
 This project demonstrates a multi-intent search system for restaurant data using natural language processing (NLP). The system leverages Byte Pair Encoding (BPE) for efficient tokenization, Word2Vec for semantic similarity, and an LSTM model for sequence prediction. The primary goal is to match user queries with relevant restaurant names and menu items.
 
 ## Data Architecture
+
+![image](https://github.com/Prasundas99/Multi-Intent-Search-Using-NLP/assets/58937669/88c067c7-f33e-4ccf-a765-796835127c1b)
+
 ###  Dataset
 The dataset comprises restaurant information, including restaurant names, menu items, prices, and distances. Each restaurant has a unique ID and a list of menu items with their respective details.
 
