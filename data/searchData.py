@@ -1,4 +1,4 @@
-restraunts_data = [
+restaurants_data = [
     {
         "restaurant_id": 1,
         "name": "Pizza Palace",
@@ -98,5 +98,55 @@ restraunts_data = [
             {"item_id": 1003, "name": "Green Smoothie", "price": 180}
         ],
         "distance_m": 400
+    },
+    {
+        "restaurant_id": 11,
+        "name": "KFC",
+        "menu": [
+            {"item_id": 1101, "name": "Original Recipe Chicken", "price": 300},
+            {"item_id": 1102, "name": "Zinger Burger", "price": 200},
+            {"item_id": 1103, "name": "Hot Wings", "price": 180}
+        ],
+        "distance_m": 1000
+    },
+    {
+        "restaurant_id": 12,
+        "name": "Domino's",
+        "menu": [
+            {"item_id": 1201, "name": "Pepperoni Pizza", "price": 280},
+            {"item_id": 1202, "name": "Cheese Burst Pizza", "price": 300},
+            {"item_id": 1203, "name": "Chicken Dominator", "price": 350}
+        ],
+        "distance_m": 1100
+    },
+    {
+        "restaurant_id": 13,
+        "name": "McDonald's",
+        "menu": [
+            {"item_id": 1301, "name": "Big Mac", "price": 250},
+            {"item_id": 1302, "name": "McChicken", "price": 220},
+            {"item_id": 1303, "name": "McVeggie", "price": 200}
+        ],
+        "distance_m": 500
+    },
+    {
+        "restaurant_id": 14,
+        "name": "Arsenal",
+        "menu": [
+            {"item_id": 1401, "name": "Classic Fish and Chips", "price": 320},
+            {"item_id": 1402, "name": "Shepherd's Pie", "price": 350},
+            {"item_id": 1403, "name": "Beef Wellington", "price": 500}
+        ],
+        "distance_m": 1300
+    },
+    {
+        "restaurant_id": 15,
+        "name": "Amnesia",
+        "menu": [
+            {"item_id": 1501, "name": "Grilled Salmon", "price": 400},
+            {"item_id": 1502, "name": "Steak Frites", "price": 450},
+            {"item_id": 1503, "name": "Lobster Bisque", "price": 350}
+        ],
+        "distance_m": 1400
     }
 ]
