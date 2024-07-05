@@ -1,3 +1,10 @@
-fastapi==0.95.2
-uvicorn==0.22.0
-pydantic==1.10.8
+fastapi
+uvicorn
+gensim
+tensorflow
+pydantic
+numpy
+scikit-learn   
+python-dotenv  
+tensorflow-addons
+torch

@@ -1,8 +1,10 @@
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI
 
 from datetime import datetime
+from nlpModels.lstm import nlpSearch, trainLstm
+from nlpModels.word2vec import train_word2vec
 import uvicorn
 
 from DTO.searchRequest import SearchRequest
@@ -35,11 +37,25 @@ async def search(request: SearchRequest):
     print("Request received: " + request.text)
 
     print("Generating corpus")
-    generateCorpus()
+    corpusData = generateCorpus()
     print("Corpus generated")
 
+    print("Training word2vec model")
+    w2vModel = train_word2vec(corpusData)
+    print("Word2vec model trained")
+
+    print("Training LSTM")
+    model, tokenizer, max_sequence_length = trainLstm(corpusData)
+    print("LSTM model trained")
+
+    print("All models trained")
+    results = nlpSearch(request.text, model,w2vModel, tokenizer, max_sequence_length)
+
+    print(f"Results for '{query}':")
+    print(results)
+
     query = request.text
-    return {"query": query,"corpus": corpus, "message": "Search functionality not implemented yet"}
+    return {"query": query, "results": results}
 
 
 # Run the API with uvicorn
