@@ -22,3 +22,18 @@ def generateCorpus():
             corpus.append(menu_item['name'].lower())
             corpus.extend(menu_item['name'].lower().split())
     return corpus
+
+
+def generate_corpus_for_bpe():
+    corpus = []
+    for restaurant in restaurants_data:
+        corpus.append(restaurant['name'].lower())
+        for menu_item in restaurant['menu']:
+            corpus.append(menu_item['name'].lower())
+    return corpus
+
+
+
+
+
+

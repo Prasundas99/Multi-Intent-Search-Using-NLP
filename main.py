@@ -3,12 +3,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI
 
 from datetime import datetime
+from nlpModels.bytePairEncoding import train_bpe_model
 from nlpModels.lstm import nlpSearch, trainLstm
 from nlpModels.word2vec import train_word2vec
 import uvicorn
 
 from DTO.searchRequest import SearchRequest
-from data.corpus import generateCorpus, corpus
+from data.corpus import generate_corpus_for_bpe, generateCorpus, corpus
 
 deployedTime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -40,9 +41,18 @@ async def search(request: SearchRequest):
     corpusData = generateCorpus()
     print("Corpus generated")
 
+    print("Generating corpus for BPE")
+    corpus_data = generate_corpus_for_bpe()
+    print("Corpus generated", corpus_data)
+
     print("Training word2vec model")
     w2vModel = train_word2vec(corpusData)
     print("Word2vec model trained")
+
+    # Train BPE model
+    print("Training BPE model")
+    bpe_model =  train_bpe_model(corpus_data)
+    print("BPE model trained")
 
     print("Training LSTM")
     model, tokenizer, max_sequence_length = trainLstm(corpusData)

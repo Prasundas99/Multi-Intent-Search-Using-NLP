@@ -8,6 +8,17 @@
 # !pip install python-dotenv
 # !pip install tensorflow-addons
 # !pip install torch
+# !pip install sentencepiece
+
+import numpy as np
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Embedding, LSTM, Dense
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+from tensorflow.keras.preprocessing.text import Tokenizer
+import gensim
+from gensim.models import Word2Vec
+import sentencepiece as spm
 
 
 restaurants_data = [
@@ -163,7 +174,6 @@ restaurants_data = [
     }
 ]
 
-
 corpus = [
     "Margherita Pizza", "Pepperoni Pizza", "Veggie Pizza",
     "Classic Burger", "Cheese Burger", "Veggie Burger",
@@ -177,22 +187,38 @@ corpus = [
     "Strawberry Smoothie", "Mango Smoothie", "Green Smoothie", "pizza palace",
     "KFC", "Domino's", "McDonald's", "Arsenal", "Amnesia"
 ]
-
-def generateCorpus():
+def generate_corpus_for_bpe():
     corpus = []
     for restaurant in restaurants_data:
         corpus.append(restaurant['name'].lower())
-        corpus.extend(restaurant['name'].lower().split())
         for menu_item in restaurant['menu']:
             corpus.append(menu_item['name'].lower())
-            corpus.extend(menu_item['name'].lower().split())
     return corpus
 
+# Function to train BPE model
+def train_bpe_model(corpus):
+    # Write the corpus to a temporary text file
+    with open('corpus.txt', 'w', encoding='utf-8') as f:
+        for line in corpus:
+            f.write(line + '\n')
 
-import gensim
-from gensim.models import Word2Vec
+    # Train the SentencePiece model
+    spm.SentencePieceTrainer.train(input='corpus.txt', model_prefix='bpe', vocab_size=5000)
+
+    return spm.SentencePieceProcessor()
 
 
+# Function to load BPE model
+def load_bpe_model():
+    sp = spm.SentencePieceProcessor()
+    sp.load('bpe.model')
+    return sp
+
+# Function to tokenize text using BPE
+def tokenize_with_bpe(text, sp):
+    return sp.encode_as_pieces(text)
+
+# Function to train Word2Vec model
 def train_word2vec(corpus):
     # Tokenize corpus
     tokenized_corpus = [sentence.lower().split() for sentence in corpus]
@@ -200,27 +226,16 @@ def train_word2vec(corpus):
     # Train Word2Vec model
     word2vec_model = Word2Vec(tokenized_corpus, vector_size=100, window=5, min_count=1, workers=4)
     word2vec_model.train(tokenized_corpus, total_examples=len(tokenized_corpus), epochs=10)
+    
     # Save Word2Vec model
-    word2vec_model.save("word2vec_model.bin")
+    word2vec_model.save("word2vec.model")
+    
     return word2vec_model
 
-def load_word2vec_model(model_path):
-    # Load Word2Vec model
-    return Word2Vec.load(model_path)   
-
-
-
-import numpy as np
-import tensorflow as tf
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Embedding, LSTM, Dense
-from tensorflow.keras.preprocessing.sequence import pad_sequences
-from tensorflow.keras.preprocessing.text import Tokenizer
-
-
-def trainLstm(corpus):
-    # Prepare text data
-    all_texts = corpus  # Combine restaurant names and menu items into a single list
+# Function to prepare text data for LSTM
+def train_lstm(corpus):
+    # Combine sentences into a single list of strings
+    all_texts = corpus
     tokenizer = Tokenizer()
     tokenizer.fit_on_texts(all_texts)
     sequences = tokenizer.texts_to_sequences(all_texts)
@@ -231,7 +246,6 @@ def trainLstm(corpus):
     data = pad_sequences(sequences, maxlen=max_sequence_length)
 
     # Prepare labels (for simplicity, let's assume we have binary relevance labels)
-    # In a real-world scenario, these labels would come from user interactions or ratings
     labels = np.random.randint(2, size=(len(data), 1))
 
     # Create the LSTM model
@@ -247,42 +261,65 @@ def trainLstm(corpus):
 
     # Train the model
     model.fit(data, labels, epochs=10, batch_size=4)
-    
-    # return model tokenizer and max_sequence_length
+
     return model, tokenizer, max_sequence_length
 
-
+# Function to encode a query for LSTM
 def encode_query(query, tokenizer, max_sequence_length):
-    seq = tokenizer.texts_to_sequences([query])
-    padded_seq = pad_sequences(seq, maxlen=max_sequence_length)
-    return padded_seq
+    sequence = tokenizer.texts_to_sequences([query])
+    padded_sequence = pad_sequences(sequence, maxlen=max_sequence_length)
+    return padded_sequence
 
+# Generate the corpus
+print("Generating corpus for BPE")
+corpus_data = generate_corpus_for_bpe()
+print("Corpus generated", corpus_data)
 
-def nlpSearch(query, lstm_model, word2vec_model, tokenizer, max_sequence_length):
+# Train BPE model
+print("Training BPE model")
+sp = train_bpe_model(corpus_data)
+print("BPE model trained")
+
+# Tokenize the corpus using BPE
+bpe_corpus = [tokenize_with_bpe(sentence, sp) for sentence in corpus_data]
+
+# Train Word2Vec with BPE tokenized corpus
+print("Training Word2Vec model with BPE tokenized corpus")
+word2vec_model = train_word2vec([' '.join(tokens) for tokens in bpe_corpus])
+print("Word2Vec model trained with BPE", word2vec_model)
+
+# Train LSTM model with BPE tokenized corpus
+print("Training LSTM with BPE tokenized corpus")
+lstm_model, tokenizer, max_sequence_length = train_lstm([' '.join(tokens) for tokens in bpe_corpus])
+print("LSTM model trained with BPE")
+
+# Function to perform search with BPE tokenization
+def nlp_search_with_bpe(query, lstm_model, word2vec_model, tokenizer, max_sequence_length, sp):
+    # Tokenize query with BPE
+    tokenized_query = tokenize_with_bpe(query, sp)
+
     # Find most similar restaurant based on the query using Word2Vec
-    tokenized_query = query.lower().split()  # Ensure query is lowercase
     restaurant_similarities = []
     for restaurant in restaurants_data:
-        restaurant_name_tokens = restaurant['name'].lower().split()  # Tokenize restaurant name
-       # Calculate similarity for each word in the query and average them
-        similarity_scores = [word2vec_model.wv.similarity(word, restaurant_token) 
-                             for word in tokenized_query 
-                             for restaurant_token in restaurant_name_tokens # Iterate over tokens in restaurant name
-                             if word in word2vec_model.wv and restaurant_token in word2vec_model.wv] # Check if both words are in vocabulary
-        if similarity_scores:  # Check if any similarity scores were found
+        restaurant_name_tokens = tokenize_with_bpe(restaurant['name'].lower(), sp)
+        similarity_scores = [
+            word2vec_model.wv.similarity(query_token, restaurant_token)
+            for query_token in tokenized_query
+            for restaurant_token in restaurant_name_tokens
+            if query_token in word2vec_model.wv and restaurant_token in word2vec_model.wv
+        ]
+        if similarity_scores:
             average_similarity = sum(similarity_scores) / len(similarity_scores)
-            restaurant_similarities.append((restaurant['name'].lower(), average_similarity)) # Append the lowercased restaurant name
+            restaurant_similarities.append((restaurant['name'].lower(), average_similarity))
 
     restaurant_similarities.sort(key=lambda x: x[1], reverse=True)
-    if restaurant_similarities:  # Handle the case where no similar restaurants are found
+    if restaurant_similarities:
         top_restaurant_name = restaurant_similarities[0][0]
     else:
         return "No similar restaurants found."
 
-    # ... rest of the function remains the same
-
     # Encode query for LSTM
-    encoded_query = encode_query(query, tokenizer, max_sequence_length)
+    encoded_query = encode_query(' '.join(tokenized_query), tokenizer, max_sequence_length)
 
     # Perform LSTM prediction
     prediction = lstm_model.predict(encoded_query)
@@ -297,25 +334,11 @@ def nlpSearch(query, lstm_model, word2vec_model, tokenizer, max_sequence_length)
             "prediction": prediction
         }
     else:
-        return "No matching restaurant found."    
+        return "No matching restaurant found."
 
-
+# Perform search with BPE tokenization
 query = "BBQ chicken"
-
-print("Generating corpus")
-corpusData = generateCorpus()
-print("Corpus generated", corpusData )
-
-print("Training word2vec model")
-w2vModel = train_word2vec(corpusData)
-print("Word2vec model trained", w2vModel)
-
-print("Training LSTM")
-model, tokenizer, max_sequence_length = trainLstm(corpusData)
-print("LSTM model trained")
-
-print("All models trained")
-results = nlpSearch(query, model,w2vModel, tokenizer, max_sequence_length)
-
+print("Performing search with BPE tokenization")
+results = nlp_search_with_bpe(query, lstm_model, word2vec_model, tokenizer, max_sequence_length, sp)
 print(f"Results for '{query}':")
-print(results) 
+print(results)
